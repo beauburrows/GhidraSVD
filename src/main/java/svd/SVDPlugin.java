@@ -31,6 +31,8 @@ import ghidra.framework.plugintool.PluginTool;
 import ghidra.framework.plugintool.util.PluginStatus;
 import ghidra.program.model.listing.Program;
 import ghidra.util.Msg;
+import io.svdparser.SvdCpu;
+import io.svdparser.SvdDevice;
 import svd.task.SvdDataTypesCreateTask;
 import svd.task.SvdMemoryMapUpdateTask;
 import svd.task.SvdParseTask;
@@ -84,6 +86,9 @@ public class SVDPlugin extends ProgramPlugin {
 			return;
 		}
 
+		// Warn the user about CPU traits that may affect the result...
+		warnAboutCpu(parseTask.getSvdDevice());
+
 		// Create the new memory map regions...
 		SvdMemoryMapUpdateTask memoryTask = new SvdMemoryMapUpdateTask(tool, program, parseTask.getSvdDevice());
 		tool.execute(memoryTask);
@@ -93,5 +98,19 @@ public class SVDPlugin extends ProgramPlugin {
 		tool.execute(symbolTask);
 
 		tool.setStatusInfo("SVD information loaded!");
+	}
+
+	private void warnAboutCpu(SvdDevice device) {
+		SvdCpu cpu = device.getCpu();
+		if (cpu == null)
+			return;
+
+		// The register datatypes assume little-endian layout, so a big-endian SVD
+		// is worth flagging to the user.
+		String endian = cpu.getEndian();
+		if (endian != null && !endian.isEmpty() && !endian.equalsIgnoreCase("little")) {
+			Msg.showWarn(getClass(), null, "Load SVD", "The SVD declares a '" + endian
+					+ "' endian CPU. Register data types assume little-endian; results may be incorrect.");
+		}
 	}
 }
