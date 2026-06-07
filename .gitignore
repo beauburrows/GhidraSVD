@@ -15,3 +15,12 @@ build/
 
 # MAC OS
 .DS_Store
+
+# other project
+SVD-Loader-Ghidra-master
+
+# svd files for testing
+svd_files
+
+# claude for testing
+CLAUDE.md
